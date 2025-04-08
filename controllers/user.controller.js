@@ -4,6 +4,7 @@ const userModel = require("../models/user.model");
 const Password = require("../models/user_passwords.model");
 const CryptoJS = require("crypto-js");
 const checkPasswordBreach = require("../utils/checkPasswordBreach");
+const mongoose = require("mongoose");
 
 const secretKey = process.env.PASSWORD_SECRET_KEY || "mySuperSecretKey";
 
@@ -80,6 +81,7 @@ const get_passwords = async (req, res) => {
     }
 
     const passwords = await Password.find({ user_id: user_id });
+    console.log("Passwords: ", passwords);
     if (passwords.length === 0) {
       return res.status(200).send({
         statusCode: 200,
@@ -90,6 +92,11 @@ const get_passwords = async (req, res) => {
     }
 
     const result = await Password.aggregate([
+      {
+        $match: {
+          user_id: new mongoose.Types.ObjectId(user_id),
+        },
+      },
       {
         $group: {
           _id: {
@@ -106,10 +113,10 @@ const get_passwords = async (req, res) => {
         $project: {
           _id: 0,
           companyId: { $first: "$ids" },
-          companyName: "$_id",
+          companyName: "$_id.companyName",
+          companyUrl: "$companyUrl",
           count: 1,
           companyLogoUrl: 1,
-          companyUrl: 1,
         },
       },
       {
