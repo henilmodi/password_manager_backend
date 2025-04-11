@@ -1,4 +1,3 @@
-// server.js or app.js
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
@@ -10,12 +9,18 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
-
-// Connect to MongoDB
-connectDB();
-
-// Middleware
 app.use(express.json());
+
+// Lazy connect to MongoDB on each request
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    return res.status(500).json({ message: "MongoDB connection failed" });
+  }
+});
+
 app.use("/api", authRoutes);
 app.use("/user", userRoutes);
 
